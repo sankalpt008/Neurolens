@@ -1,5 +1,6 @@
 # NeuroLens
 
+NeuroLens unifies GPU profiling runs into a strict, shareable ledger. The project now spans the Phase 0 groundwork (docs, schema, validation) and Phase 1–2 runtime adapters for ONNX Runtime, PyTorch, and TensorRT (with graceful stub).
 NeuroLens unifies GPU profiling runs into a strict, shareable ledger. The project now includes the Phase 0 groundwork (docs, schema, validation) and the Phase 1 ONNX Runtime profiling pipeline.
 NeuroLens unifies GPU profiling runs into a strict, shareable ledger. This repository currently hosts the Phase 0 groundwork: schema, docs, and validation tests.
 
@@ -11,6 +12,33 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -U pip
 pip install -e .[dev]
+# Optional backends
+pip install -e .[profiler]        # ONNX Runtime helper
+pip install onnx torch            # Install manually if extras unavailable
+```
+
+### 2. Run tests
+```bash
+pytest -q
+```
+Tests automatically skip adapters whose dependencies are missing (e.g., TensorRT or PyTorch).
+
+### 3. Profile models via CLI
+```bash
+# ONNX Runtime
+python tools/gen_add_onnx.py --out /tmp/add.onnx
+neurolens profile --backend onnxrt --model /tmp/add.onnx
+
+# PyTorch builtin tiny model (requires torch installed)
+python tools/gen_tiny_linear.py --out-dir /tmp/tiny
+neurolens profile --backend torch --model builtin:tiny_linear
+
+# TensorRT (requires generated ONNX; stub fallback if TRT unavailable)
+neurolens profile --backend tensorrt --model /tmp/tiny/tiny_linear.onnx --allow-stub-trt
+```
+The command writes a schema-compliant artifact to `runs/` and prints a latency summary. Use `neurolens profile --help` for the full CLI reference.
+
+### 4. Validate a profiling JSON manually
 ```
 
 > **Note:** To execute real ONNX Runtime profiles install the optional extras: `pip install -e .[profiler]`.
@@ -32,6 +60,10 @@ The command writes a schema-compliant artifact to `runs/` and prints a latency s
 python - <<'PY'
 from pathlib import Path
 import json
+from neurolens.utils.validate import validate_run_schema
+
+data = json.load(open('samples/trace_minimal.json'))
+validate_run_schema(data)
 import jsonschema
 
 schema = json.load(open('schema/run.schema.json'))
@@ -44,6 +76,13 @@ PY
 ## Project Layout
 - `docs/` — specifications, metrics glossary, and architecture notes.
 - `schema/` — JSON schema definitions for profiling runs.
+- `neurolens/core/` — profiling orchestrator and run writers.
+- `neurolens/adapters/` — backend-specific adapters and registry.
+- `neurolens/utils/` — environment detection and schema validation helpers.
+- `neurolens/cli/` — Typer-powered CLI entrypoints.
+- `samples/` — example traces; generate models via `tools/` helpers when needed.
+- `golden/` — canonical traces for parity checks.
+- `tests/` — Pytest-based validation harness for schema and adapters.
 - `neurolens/core/` — profiling orchestrator and schema validation helpers.
 - `neurolens/adapters/` — backend-specific adapters (Phase 1: ONNX Runtime).
 - `neurolens/cli/` — Typer-powered CLI entrypoints.

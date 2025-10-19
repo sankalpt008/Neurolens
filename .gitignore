@@ -21,3 +21,11 @@ ENV/
 .DS_Store
 .idea/
 .vscode/
+
+# Model artifacts
+*.onnx
+*.pt
+*.engine
+*.plan
+*.npz
+*.npy
