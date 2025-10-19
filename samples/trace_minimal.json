@@ -1,0 +1,111 @@
+{
+  "run_id": "4f8f6c9d-b9c4-4f3b-980d-4c0cc6d5ad1f",
+  "created_at": "2025-10-19T12:00:00Z",
+  "hardware": {
+    "vendor": "NVIDIA",
+    "gpu_model": "A100-SXM4-40GB",
+    "gpu_count": 1,
+    "memory_gb": 40,
+    "driver_version": "535.104"
+  },
+  "software": {
+    "backend": "onnxrt",
+    "version": "1.17.0",
+    "precision": "fp16"
+  },
+  "model": {
+    "name": "TransformerEncoder",
+    "framework_opset": "onnx-opset17",
+    "batch_size": 8,
+    "parameters_millions": 1100.5
+  },
+  "timeline": [
+    {
+      "op_index": 0,
+      "op_name": "MatMul_0",
+      "op_type": "MatMul",
+      "start_ms": 0.0,
+      "end_ms": 2.1,
+      "duration_ms": 2.1,
+      "api_launch_overhead_ms": 0.05,
+      "kernels": [
+        {
+          "name": "matmul_main",
+          "start_ms": 0.05,
+          "duration_ms": 2.0,
+          "achieved_occupancy": 0.72,
+          "warp_execution_efficiency": 0.88,
+          "sm_efficiency": 0.81,
+          "gpu_utilization": 0.79,
+          "l2_hit_rate": 0.64,
+          "dram_read_gb": 1.2,
+          "dram_write_gb": 0.4,
+          "bytes_read": 1200000000,
+          "bytes_write": 400000000
+        }
+      ],
+      "metrics": {
+        "latency_ms": 2.1,
+        "total_latency_ms": 2.1,
+        "p50_ms": 2.1,
+        "p95_ms": 2.1
+      }
+    },
+    {
+      "op_index": 1,
+      "op_name": "Softmax_0",
+      "op_type": "Softmax",
+      "start_ms": 2.2,
+      "end_ms": 3.0,
+      "duration_ms": 0.8,
+      "api_launch_overhead_ms": 0.03,
+      "kernels": [
+        {
+          "name": "softmax_reduce",
+          "start_ms": 2.23,
+          "duration_ms": 0.5,
+          "achieved_occupancy": 0.68,
+          "warp_execution_efficiency": 0.75,
+          "sm_efficiency": 0.7,
+          "gpu_utilization": 0.66,
+          "l2_hit_rate": 0.71,
+          "dram_read_gb": 0.3,
+          "dram_write_gb": 0.1,
+          "bytes_read": 300000000,
+          "bytes_write": 100000000
+        },
+        {
+          "name": "softmax_norm",
+          "start_ms": 2.75,
+          "duration_ms": 0.4,
+          "achieved_occupancy": 0.7,
+          "warp_execution_efficiency": 0.78,
+          "sm_efficiency": 0.69,
+          "gpu_utilization": 0.7,
+          "l2_hit_rate": 0.69,
+          "dram_read_gb": 0.2,
+          "dram_write_gb": 0.05,
+          "bytes_read": 200000000,
+          "bytes_write": 50000000
+        }
+      ],
+      "metrics": {
+        "latency_ms": 0.8,
+        "total_latency_ms": 0.8,
+        "p50_ms": 0.7,
+        "p95_ms": 0.8
+      }
+    }
+  ],
+  "summary": {
+    "total_duration_ms": 3.0,
+    "total_kernels": 3,
+    "top_bottleneck": "MatMul_0",
+    "metrics": {
+      "sm_efficiency": 0.78,
+      "gpu_utilization": 0.74,
+      "dram_throughput_gbps": 550.0,
+      "ai_flops_per_byte": 3.5
+    }
+  }
+}
