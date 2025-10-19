@@ -1,0 +1,51 @@
+{
+  "created_at": "2025-01-01T00:00:00Z",
+  "hardware_norm": {
+    "peak_dram_gbps": null,
+    "sm_count": null
+  },
+  "ops": [
+    {
+      "index": 0,
+      "name": "MatMul_0",
+      "sig": "7a7ea854c055d734d6e4c1636041e682f3a72cd6",
+      "type": "MatMul",
+      "vector": [
+        0.7241379310344827,
+        0.0,
+        0.72,
+        0.88,
+        0.64,
+        0.0
+      ]
+    },
+    {
+      "index": 1,
+      "name": "Softmax_0",
+      "sig": "3f2b6ef8382843bf627eb7d416ccd73749456bc5",
+      "type": "Softmax",
+      "vector": [
+        0.27586206896551724,
+        0.0,
+        0.69,
+        0.765,
+        0.7,
+        0.0
+      ]
+    }
+  ],
+  "run_id": "4f8f6c9d-b9c4-4f3b-980d-4c0cc6d5ad1f",
+  "source_run_sha": "8d9a396129dd3ac4d9d68775d35c868d430a4a56f68e85d7f939e2388e921dff",
+  "summary": {
+    "num_ops": 2,
+    "total_latency_ms": 3.0
+  },
+  "vector_spec": [
+    "lat_norm",
+    "ai",
+    "occ",
+    "warp_eff",
+    "l2_hit",
+    "dram_norm"
+  ]
+}

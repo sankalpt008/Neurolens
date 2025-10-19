@@ -8,6 +8,11 @@ import typer
 
 from neurolens.core.profiler import ProfilerResult, SchemaValidationError, profile_model
 
+app = typer.Typer(
+    add_completion=False,
+    help="Profile models with NeuroLens adapters.",
+    invoke_without_command=True,
+)
 app = typer.Typer(add_completion=False, help="Profile models with NeuroLens adapters.")
 
 BACKENDS = ("onnxrt", "torch", "tensorrt")
@@ -22,6 +27,7 @@ def _build_model_spec(backend: str, model: str) -> Dict[str, str]:
     return {"path": str(path)}
 
 
+@app.callback()
 @app.command()
 def profile(
     backend: str = typer.Option("onnxrt", "--backend", help="Runtime backend", case_sensitive=False),

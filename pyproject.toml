@@ -27,6 +27,7 @@ profiler = [
 ]
 
 [project.scripts]
+neurolens = "neurolens.cli.main:run"
 neurolens = "neurolens.cli.profile:run"
 
 [tool.pytest.ini_options]

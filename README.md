@@ -38,6 +38,18 @@ neurolens profile --backend tensorrt --model /tmp/tiny/tiny_linear.onnx --allow-
 ```
 The command writes a schema-compliant artifact to `runs/` and prints a latency summary. Use `neurolens profile --help` for the full CLI reference.
 
+### 4. Fingerprints & Diff
+```bash
+# Build a fingerprint from a run artifact
+neurolens fingerprint --run runs/example.json --out fp/example.fp.json
+
+# Compare two fingerprints and export a Markdown report
+neurolens compare --a fp/base.fp.json --b fp/latest.fp.json --topk 10 --markdown out/compare.md
+```
+Fingerprints capture per-op vectors normalized by run totals and optional hardware peaks. Similarity uses cosine distance across
+aligned op signatures, and the diff output highlights which layers shifted most.
+
+### 5. Validate a profiling JSON manually
 ### 4. Validate a profiling JSON manually
 ```
 
@@ -78,6 +90,8 @@ PY
 - `schema/` — JSON schema definitions for profiling runs.
 - `neurolens/core/` — profiling orchestrator and run writers.
 - `neurolens/adapters/` — backend-specific adapters and registry.
+- `neurolens/fingerprint/` — fingerprint builder and similarity utilities.
+- `neurolens/utils/` — environment detection, schema validation, and JSON helpers.
 - `neurolens/utils/` — environment detection and schema validation helpers.
 - `neurolens/cli/` — Typer-powered CLI entrypoints.
 - `samples/` — example traces; generate models via `tools/` helpers when needed.
