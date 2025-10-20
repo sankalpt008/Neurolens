@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
 
+import yaml
+
 from neurolens.utils.mathx import percentile, safe_div
 
 RULES_PATH = Path(__file__).resolve().with_name("rules.yaml")
@@ -154,6 +156,7 @@ def load_rules(path: str | Path | None = None) -> List[Dict[str, Any]]:
     rules_path = Path(path) if path else RULES_PATH
     with rules_path.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
+        data = yaml.safe_load(handle)
     if not data:
         return []
     if not isinstance(data, list):
