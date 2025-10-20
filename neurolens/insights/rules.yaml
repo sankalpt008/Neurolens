@@ -166,3 +166,141 @@
     "impact": "global.memcpy_share"
   }
 ]
+- id: memory_bound_low_ai
+  scope: op
+  where:
+    all:
+      - "features.ai != null and features.ai < 8"
+      - "features.dram_norm > 0.6"
+      - "features.lat_norm > 0.02"
+  severity: high
+  message: "Layer appears memory-bound with low arithmetic intensity."
+  suggest:
+    - "Fuse kernels or increase tile size to improve data reuse."
+    - "Try FP16/INT8 precision if numerically safe."
+  refs:
+    - "docs/cookbook.md#memory-bound"
+  impact: "features.lat_norm"
+
+- id: low_occupancy
+  scope: op
+  where:
+    all:
+      - "features.occ != null and features.occ < 0.35"
+      - "features.warp_eff != null and features.warp_eff < 0.6"
+      - "features.lat_norm > 0.01"
+  severity: medium
+  message: "Kernel shows low occupancy and warp execution efficiency."
+  suggest:
+    - "Tune block size to improve occupancy."
+    - "Investigate register pressure or shared memory usage."
+  refs:
+    - "docs/cookbook.md#occupancy"
+  impact: "features.lat_norm"
+
+- id: poor_l2_locality
+  scope: op
+  where:
+    all:
+      - "features.l2_hit != null and features.l2_hit < 0.4"
+      - "features.dram_norm > 0.5"
+      - "features.lat_norm > 0.015"
+  severity: medium
+  message: "Low L2 hit rate with high DRAM pressure suggests poor locality."
+  suggest:
+    - "Revisit tensor layouts or blocking to improve cache reuse."
+    - "Consider kernel fusion to reduce round-trips to DRAM."
+  refs:
+    - "docs/cookbook.md#l2"
+  impact: "features.lat_norm"
+
+- id: warp_divergence_proxy
+  scope: op
+  where:
+    all:
+      - "features.warp_eff != null and features.warp_eff < 0.65"
+      - "features.occ > 0.2"
+      - "features.lat_norm > 0.01"
+  severity: low
+  message: "Warp execution efficiency hints at divergence or imbalance."
+  suggest:
+    - "Check conditional branches inside the kernel."
+    - "Balance workloads across warps."
+  refs:
+    - "docs/cookbook.md#warp-efficiency"
+  impact: "features.lat_norm"
+
+- id: regression_op_latency
+  scope: op
+  where:
+    all:
+      - "delta.lat_ms_pct != null"
+      - "delta.lat_ms_pct > 0.1"
+  severity: high
+  message: "Latency regressed significantly versus the baseline."
+  suggest:
+    - "Inspect recent changes to this layer's implementation."
+    - "Compare compiler flags or fused kernels with the baseline run."
+  refs:
+    - "docs/cookbook.md#regressions"
+  impact: "features.lat_norm"
+
+- id: host_bound_launch
+  scope: global
+  where:
+    all:
+      - "global.api_launch_overhead_share != null"
+      - "global.api_launch_overhead_share > 0.05"
+  severity: medium
+  message: "Host launch overhead is a noticeable share of total latency."
+  suggest:
+    - "Batch launches or enable CUDA Graphs to reduce driver overhead."
+    - "Profile CPU-side preparation time."
+  refs:
+    - "docs/cookbook.md#launch-overhead"
+  impact: "global.api_launch_overhead_share"
+
+- id: gpu_idle
+  scope: global
+  where:
+    all:
+      - "global.gpu_utilization != null"
+      - "global.gpu_utilization < 0.4"
+  severity: high
+  message: "GPU utilization is low; workloads may be CPU- or I/O-bound."
+  suggest:
+    - "Overlap compute and transfers via streams."
+    - "Increase batch size if feasible."
+  refs:
+    - "docs/cookbook.md#gpu-utilization"
+  impact: "1 - global.gpu_utilization"
+
+- id: many_tiny_ops
+  scope: global
+  where:
+    all:
+      - "global.num_ops > 200"
+      - "global.median_latency_ms < 0.05"
+  severity: medium
+  message: "Execution dominated by many tiny ops; consider fusion or batching."
+  suggest:
+    - "Group adjacent elementwise ops."
+    - "Enable compiler fusion passes (TorchInductor, TensorRT optimization)."
+  refs:
+    - "docs/cookbook.md#kernel-launch"
+  impact: "global.tiny_op_fraction"
+
+- id: memcpy_dominates
+  scope: global
+  where:
+    all:
+      - "global.memcpy_share != null"
+      - "global.memcpy_share > 0.25"
+  severity: medium
+  message: "Memcpy activity is consuming a large share of runtime."
+  suggest:
+    - "Stage tensors to device memory earlier."
+    - "Overlap copies with compute using asynchronous streams."
+  refs:
+    - "docs/cookbook.md#memcpy"
+  impact: "global.memcpy_share"
