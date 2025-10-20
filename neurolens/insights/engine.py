@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
@@ -154,6 +155,7 @@ def load_rules(path: str | Path | None = None) -> List[Dict[str, Any]]:
 
     rules_path = Path(path) if path else RULES_PATH
     with rules_path.open("r", encoding="utf-8") as handle:
+        data = json.load(handle)
         data = yaml.safe_load(handle)
     if not data:
         return []

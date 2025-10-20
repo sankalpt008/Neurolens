@@ -2,6 +2,7 @@
 
 ## Overview
 
+NeuroLens insights are driven by a YAML-based rules DSL (the project stores the rules using JSON syntax for maximum portability) that inspects per-op vectors, kernel counters, and global run statistics. Rules produce actionable findings that surface in the `neurolens report` CLI as global or per-op suggestions.
 NeuroLens insights are driven by a YAML-based rules DSL that inspects per-op vectors, kernel counters, and global run statistics. Rules produce actionable findings that surface in the `neurolens report` CLI as global or per-op suggestions.
 
 ## Rule Structure
@@ -66,4 +67,5 @@ Comparisons follow Python semantics (`==`, `!=`, `<`, `<=`, `>`, `>=`). Any comp
 4. Run `pytest -k insights` to execute unit tests, or `neurolens report --run <run.json>` to manually inspect the output. Add/adjust tests under `tests/test_insights_engine_unit.py` as needed.
 5. Update documentation if the new rule introduces fresh terminology or references.
 
+Rules are hot-reloadable at runtime; advanced users can maintain custom rule packs by pointing `evaluate_run(..., rules_path=...)` to alternate YAML (or JSON) files.
 Rules are hot-reloadable at runtime; advanced users can maintain custom rule packs by pointing `evaluate_run(..., rules_path=...)` to alternate YAML files.

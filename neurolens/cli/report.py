@@ -139,6 +139,13 @@ def _build_report_payload(
 
 
 def _render_template(template_name: str, report_payload: Dict[str, Any], destination: Path | str) -> None:
+    if template_name.endswith(".html.j2"):
+        output = _render_html(report_payload)
+    elif template_name.endswith(".md.j2"):
+        output = _render_markdown(report_payload)
+    else:  # pragma: no cover - configuration guard
+        raise typer.BadParameter(f"Unsupported template {template_name}")
+
     try:
         template = _ENV.get_template(template_name)
     except TemplateNotFound:
@@ -147,6 +154,177 @@ def _render_template(template_name: str, report_payload: Dict[str, Any], destina
     output = template.render(report=report_payload)
     path = ensure_parent_dir(destination)
     path.write_text(output, encoding="utf-8")
+
+
+def _render_markdown(report: Dict[str, Any]) -> str:
+    lines = ["# NeuroLens Profiling Report", ""]
+    lines.append(f"- Generated at: {report.get('generated_at')}")
+    lines.append(f"- Input: {report['input']['type']} — `{report['input']['path']}`")
+    baseline_path = report.get("baseline", {}).get("path")
+    if baseline_path:
+        lines.append(f"- Baseline: `{baseline_path}`")
+    compare = report.get("compare")
+    if compare and compare.get("similarity") is not None:
+        lines.append(f"- Similarity vs baseline: {compare['similarity']:.4f}")
+
+    summary = report.get("summary", {})
+    lines.extend(
+        [
+            "",
+            "## Run Summary",
+            f"- Total latency: {summary.get('total_latency_ms', 'n/a')} ms",
+            f"- Operations: {summary.get('num_ops', 'n/a')}",
+            f"- GPU utilization: {report.get('global', {}).get('gpu_utilization', 'n/a')}",
+        ]
+    )
+
+    lines.append("\n## Top Global Findings")
+    global_findings = report.get("insights", {}).get("ranking", {}).get("top_global", [])
+    if global_findings:
+        lines.append("| Severity | Rule | Score | Message |")
+        lines.append("| --- | --- | --- | --- |")
+        for finding in global_findings:
+            lines.append(
+                f"| {finding['severity']} | {finding['id']} | {finding['score']:.3f} | {finding['message']} |"
+            )
+    else:
+        lines.append("_No global findings triggered._")
+
+    lines.append("\n## Top Per-Op Findings")
+    op_findings = report.get("insights", {}).get("ranking", {}).get("top_ops", [])
+    if op_findings:
+        lines.append("| Op Index | Name | Rule | Severity | Score | Suggestions |")
+        lines.append("| --- | --- | --- | --- | --- | --- |")
+        for finding in op_findings:
+            suggestions = "; ".join(finding.get("suggest", [])) or "n/a"
+            lines.append(
+                f"| {finding['op_index']} | {finding['op_name']} | {finding['id']} | "
+                f"{finding['severity']} | {finding['score']:.3f} | {suggestions} |"
+            )
+    else:
+        lines.append("_No per-op findings triggered._")
+
+    lines.append("\n## Per-Op Metrics")
+    lines.append("| # | Name | Type | Latency (ms) | Lat % | AI | Occ | Warp Eff | L2 Hit | DRAM Norm |")
+    lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+    for op in report.get("ops", []):
+        lines.append(
+            "| {index} | {name} | {type} | {latency_ms:.3f} | {lat_norm:.3f} | {ai:.3f} | {occ:.3f} | "
+            "{warp_eff:.3f} | {l2_hit:.3f} | {dram_norm:.3f} |".format(
+                index=op.get("index", "n/a"),
+                name=op.get("name", "n/a"),
+                type=op.get("type", "n/a"),
+                latency_ms=float(op.get("latency_ms", 0.0)),
+                lat_norm=float(op.get("lat_norm", 0.0)),
+                ai=float(op.get("features", {}).get("ai", 0.0)),
+                occ=float(op.get("features", {}).get("occ", 0.0)),
+                warp_eff=float(op.get("features", {}).get("warp_eff", 0.0)),
+                l2_hit=float(op.get("features", {}).get("l2_hit", 0.0)),
+                dram_norm=float(op.get("features", {}).get("dram_norm", 0.0)),
+            )
+        )
+
+    return "\n".join(lines) + "\n"
+
+
+def _render_html(report: Dict[str, Any]) -> str:
+    lines = ["<!DOCTYPE html>", "<html lang=\"en\">", "<head>", "  <meta charset=\"utf-8\">", "  <title>NeuroLens Report</title>", "  <style>body{font-family:Arial, sans-serif;margin:2rem;}table{border-collapse:collapse;}th,td{border:1px solid #ccc;padding:0.4rem;}th{background:#f3f4f6;}}</style>", "</head>", "<body>"]
+    lines.append("  <h1>NeuroLens Profiling Report</h1>")
+    lines.append(f"  <p><strong>Generated:</strong> {report.get('generated_at')}</p>")
+    lines.append(
+        f"  <p><strong>Input:</strong> {report['input']['type']} — <code>{report['input']['path']}</code></p>"
+    )
+    baseline_path = report.get("baseline", {}).get("path")
+    if baseline_path:
+        lines.append(f"  <p><strong>Baseline:</strong> <code>{baseline_path}</code></p>")
+    compare = report.get("compare")
+    if compare and compare.get("similarity") is not None:
+        lines.append(f"  <p><strong>Similarity:</strong> {compare['similarity']:.4f}</p>")
+
+    summary = report.get("summary", {})
+    global_metrics = report.get("global", {})
+    lines.append("  <h2>Run Summary</h2>")
+    lines.append("  <ul>")
+    lines.append(f"    <li>Total latency: {summary.get('total_latency_ms', 'n/a')} ms</li>")
+    lines.append(f"    <li>Operations: {summary.get('num_ops', 'n/a')}</li>")
+    lines.append(f"    <li>GPU utilization: {global_metrics.get('gpu_utilization', 'n/a')}</li>")
+    lines.append("  </ul>")
+
+    def _render_table(rows: list[dict[str, Any]], headers: list[str]) -> None:
+        lines.append("  <table>")
+        lines.append("    <tr>" + "".join(f"<th>{header}</th>" for header in headers) + "</tr>")
+        for row in rows:
+            lines.append(
+                "    <tr>"
+                + "".join(f"<td>{value}</td>" for value in row.values())
+                + "</tr>"
+            )
+        lines.append("  </table>")
+
+    lines.append("  <h2>Top Global Findings</h2>")
+    global_findings = report.get("insights", {}).get("ranking", {}).get("top_global", [])
+    if global_findings:
+        rows = [
+            {
+                "Severity": item.get("severity"),
+                "Rule": item.get("id"),
+                "Score": f"{item.get('score', 0):.3f}",
+                "Message": item.get("message"),
+            }
+            for item in global_findings
+        ]
+        _render_table(rows, ["Severity", "Rule", "Score", "Message"])
+    else:
+        lines.append("  <p>No global findings triggered.</p>")
+
+    lines.append("  <h2>Top Per-Op Findings</h2>")
+    op_findings = report.get("insights", {}).get("ranking", {}).get("top_ops", [])
+    if op_findings:
+        rows = []
+        for item in op_findings:
+            rows.append(
+                {
+                    "Op": item.get("op_index"),
+                    "Name": item.get("op_name"),
+                    "Rule": item.get("id"),
+                    "Severity": item.get("severity"),
+                    "Score": f"{item.get('score', 0):.3f}",
+                    "Suggestions": "; ".join(item.get("suggest", [])) or "n/a",
+                }
+            )
+        _render_table(rows, ["Op", "Name", "Rule", "Severity", "Score", "Suggestions"])
+    else:
+        lines.append("  <p>No per-op findings triggered.</p>")
+
+    lines.append("  <h2>Per-Op Metrics</h2>")
+    op_rows = []
+    for op in report.get("ops", []):
+        features = op.get("features", {})
+        op_rows.append(
+            {
+                "#": op.get("index", "n/a"),
+                "Name": op.get("name", "n/a"),
+                "Type": op.get("type", "n/a"),
+                "Latency (ms)": f"{float(op.get('latency_ms', 0.0)):.3f}",
+                "Lat %": f"{float(op.get('lat_norm', 0.0)):.3f}",
+                "AI": f"{float(features.get('ai', 0.0)):.3f}",
+                "Occ": f"{float(features.get('occ', 0.0)):.3f}",
+                "Warp Eff": f"{float(features.get('warp_eff', 0.0)):.3f}",
+                "L2 Hit": f"{float(features.get('l2_hit', 0.0)):.3f}",
+                "DRAM Norm": f"{float(features.get('dram_norm', 0.0)):.3f}",
+            }
+        )
+    if op_rows:
+        _render_table(
+            op_rows,
+            ["#", "Name", "Type", "Latency (ms)", "Lat %", "AI", "Occ", "Warp Eff", "L2 Hit", "DRAM Norm"],
+        )
+    else:
+        lines.append("  <p>No operations available.</p>")
+
+    lines.append("</body>")
+    lines.append("</html>")
+    return "\n".join(lines) + "\n"
 
 
 def _print_summary(report_payload: Dict[str, Any]) -> None:
