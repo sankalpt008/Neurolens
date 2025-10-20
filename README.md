@@ -74,6 +74,17 @@ neurolens view --compare fp/base.fp.json fp/latest.fp.json
 ```
 The Streamlit-powered dashboard offers timeline, roofline, and fingerprint diff pages. All data is loaded from local JSON files so the experience remains fully offline.
 
+### 7. Batch-sweep Benchmarking
+```bash
+python tools/gen_add_onnx.py --out ./tmp/add.onnx
+neurolens bench --config configs/example_bench.yaml --out-dir bench_runs
+```
+The bench harness sweeps batch size, sequence length, and precision grids, writing
+schema-validated runs, matching fingerprints, and a `summary.csv` rollup under the
+chosen output directory. Each artifact is annotated with environment metadata and
+user-defined tags.
+
+### 8. Export Bundles
 ### 7. Export Bundles
 ```bash
 # Generate artifacts
@@ -86,6 +97,7 @@ neurolens export --run runs/run123.json --fingerprint fp/run123.fp.json \
 ```
 The resulting `.bundle.zip` archive collects the run, fingerprint, reports, and a `manifest.json` with SHA-256 hashes for integrity checks.
 
+### 9. Validate a profiling JSON manually
 ### 8. Validate a profiling JSON manually
 ### 7. Validate a profiling JSON manually
 ### 5. Validate a profiling JSON manually

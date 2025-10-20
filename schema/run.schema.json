@@ -84,6 +84,53 @@
         }
       }
     },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["env", "tags", "config"],
+      "properties": {
+        "env": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "driver_version",
+            "cuda_version",
+            "gpu_name",
+            "os",
+            "python_version"
+          ],
+          "properties": {
+            "driver_version": {"type": "string"},
+            "cuda_version": {"type": "string"},
+            "gpu_name": {"type": "string"},
+            "os": {"type": "string"},
+            "python_version": {"type": "string"}
+          }
+        },
+        "tags": {
+          "type": "object",
+          "additionalProperties": {"type": "string"}
+        },
+        "config": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "batch_size",
+            "sequence_length",
+            "precision",
+            "backend",
+            "repeat"
+          ],
+          "properties": {
+            "batch_size": {"type": "integer", "minimum": 1},
+            "sequence_length": {"type": "integer", "minimum": 1},
+            "precision": {"type": "string"},
+            "backend": {"type": "string"},
+            "repeat": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    },
     "timeline": {
       "type": "array",
       "minItems": 1,

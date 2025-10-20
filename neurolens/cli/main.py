@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import typer
 
+from . import bench as bench_cli
 from . import compare as compare_cli
 from . import fingerprint as fingerprint_cli
 from . import profile as profile_cli
@@ -17,6 +18,7 @@ app.add_typer(compare_cli.app, name="compare")
 app.add_typer(report_cli.app, name="report")
 app.add_typer(view_cli.app, name="view")
 app.add_typer(export_cli.app, name="export")
+app.add_typer(bench_cli.app, name="bench")
 
 
 def run() -> None:
