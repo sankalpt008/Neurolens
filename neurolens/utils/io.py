@@ -5,6 +5,13 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
+__all__ = [
+    "read_json",
+    "write_json",
+    "sha256_json",
+    "ensure_parent_dir",
+    "ensure_dir",
+]
 __all__ = ["read_json", "write_json", "sha256_json", "ensure_parent_dir"]
 from hashlib import sha256
 from pathlib import Path
@@ -39,6 +46,14 @@ def ensure_parent_dir(path: str | Path) -> Path:
     file_path = Path(path)
     file_path.parent.mkdir(parents=True, exist_ok=True)
     return file_path
+
+
+def ensure_dir(path: str | Path) -> Path:
+    """Ensure ``path`` exists as a directory and return it as a ``Path``."""
+
+    directory = Path(path)
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
 
 
 def write_json(path: str | Path, obj: Dict[str, Any]) -> None:

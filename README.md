@@ -74,6 +74,19 @@ neurolens view --compare fp/base.fp.json fp/latest.fp.json
 ```
 The Streamlit-powered dashboard offers timeline, roofline, and fingerprint diff pages. All data is loaded from local JSON files so the experience remains fully offline.
 
+### 7. Export Bundles
+```bash
+# Generate artifacts
+neurolens fingerprint --run runs/run123.json --out fp/run123.fp.json
+neurolens report --run runs/run123.json --html reports/run123.html
+
+# Package everything into a bundle
+neurolens export --run runs/run123.json --fingerprint fp/run123.fp.json \
+  --report reports/run123.html --out-dir exports
+```
+The resulting `.bundle.zip` archive collects the run, fingerprint, reports, and a `manifest.json` with SHA-256 hashes for integrity checks.
+
+### 8. Validate a profiling JSON manually
 ### 7. Validate a profiling JSON manually
 ### 5. Validate a profiling JSON manually
 ### 5. Validate a profiling JSON manually
