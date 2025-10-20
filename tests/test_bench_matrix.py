@@ -11,6 +11,8 @@ if str(PROJECT_ROOT) not in sys.path:
 bench_module = importlib.import_module("neurolens.bench.run_matrix")
 from neurolens.core.profiler import ProfilerResult  # noqa: E402
 from neurolens.utils.io import read_json  # noqa: E402
+from neurolens.core.profiler import ProfilerResult
+from neurolens.utils.io import read_json
 
 SAMPLE_RUN = read_json(PROJECT_ROOT / "samples" / "trace_minimal.json")
 

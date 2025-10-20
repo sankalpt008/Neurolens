@@ -28,6 +28,16 @@ dependencies = [
     "jsonschema>=4.19",
     "pydantic>=2.7",
     "numpy>=1.24",
+version = "0.0.0"
+description = "NeuroLens profiling normalization toolkit"
+authors = [{name = "NeuroLens Contributors"}]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "jsonschema>=4.19",
+    "typer>=0.9",
+    "jinja2>=3.1",
     "pyyaml>=6.0",
 ]
 
@@ -41,6 +51,12 @@ dev = [
 profiler = [
     "onnxruntime>=1.16",
     "torch>=2.1",
+    "pydantic>=2.7",
+    "jsonschema>=4.19",
+]
+profiler = [
+    "onnxruntime>=1.16",
+    "numpy>=1.23",
 ]
 viz = [
     "streamlit>=1.32",
@@ -48,6 +64,11 @@ viz = [
 
 [project.scripts]
 neurolens = "neurolens.cli.main:app"
+neurolens = "neurolens.cli.main:run"
+
+[project.scripts]
+neurolens = "neurolens.cli.main:run"
+neurolens = "neurolens.cli.profile:run"
 
 [tool.pytest.ini_options]
 minversion = "7.0"

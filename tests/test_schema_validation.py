@@ -8,6 +8,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 import jsonschema  # noqa: E402
+import jsonschema
 
 
 SCHEMA_PATH = PROJECT_ROOT / "schema" / "run.schema.json"
