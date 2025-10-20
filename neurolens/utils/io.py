@@ -12,6 +12,12 @@ __all__ = [
     "ensure_parent_dir",
     "ensure_dir",
 ]
+__all__ = ["read_json", "write_json", "sha256_json", "ensure_parent_dir"]
+from hashlib import sha256
+from pathlib import Path
+from typing import Any, Dict
+
+__all__ = ["read_json", "write_json", "sha256_json"]
 
 
 def read_json(path: str | Path) -> Dict[str, Any]:
@@ -23,6 +29,9 @@ def read_json(path: str | Path) -> Dict[str, Any]:
     except FileNotFoundError:  # pragma: no cover - upstream handling
         raise
     except OSError as exc:  # pragma: no cover - I/O edge cases
+    except FileNotFoundError as exc:  # pragma: no cover - handled by caller in tests/cli
+        raise
+    except OSError as exc:
         raise RuntimeError(f"Failed to read JSON file '{file_path}': {exc}") from exc
 
     try:
@@ -51,6 +60,11 @@ def write_json(path: str | Path, obj: Dict[str, Any]) -> None:
     """Persist ``obj`` to ``path`` with deterministic formatting."""
 
     file_path = ensure_parent_dir(path)
+def write_json(path: str | Path, obj: Dict[str, Any]) -> None:
+    """Persist ``obj`` to ``path`` with deterministic formatting."""
+
+    file_path = Path(path)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     serialized = json.dumps(obj, ensure_ascii=False, indent=2, sort_keys=True)
     file_path.write_text(serialized + "\n", encoding="utf-8")
 

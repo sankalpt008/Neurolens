@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 import typer
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound, select_autoescape
 
 from neurolens.fingerprint.builder import build_fingerprint
 from neurolens.fingerprint.similarity import diff as fingerprint_diff
@@ -14,6 +15,14 @@ from neurolens.utils.io import ensure_parent_dir, read_json
 from neurolens.utils.validate import SchemaValidationError, validate_run_schema
 
 app = typer.Typer(add_completion=False, help="Generate NeuroLens insights reports")
+
+_TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "insights" / "templates"
+_ENV = Environment(
+    loader=FileSystemLoader(_TEMPLATE_DIR),
+    autoescape=select_autoescape(["html"]),
+    trim_blocks=True,
+    lstrip_blocks=True,
+)
 
 
 @app.command()
@@ -137,6 +146,12 @@ def _render_template(template_name: str, report_payload: Dict[str, Any], destina
     else:  # pragma: no cover - configuration guard
         raise typer.BadParameter(f"Unsupported template {template_name}")
 
+    try:
+        template = _ENV.get_template(template_name)
+    except TemplateNotFound:
+        typer.echo(f"Error: missing template {template_name}", err=True)
+        raise typer.Exit(code=1)
+    output = template.render(report=report_payload)
     path = ensure_parent_dir(destination)
     path.write_text(output, encoding="utf-8")
 
