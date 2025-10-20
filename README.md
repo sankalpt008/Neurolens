@@ -49,6 +49,18 @@ neurolens compare --a fp/base.fp.json --b fp/latest.fp.json --topk 10 --markdown
 Fingerprints capture per-op vectors normalized by run totals and optional hardware peaks. Similarity uses cosine distance across
 aligned op signatures, and the diff output highlights which layers shifted most.
 
+### Generate Insights & Reports
+```bash
+# From a validated profiling run
+neurolens report --run runs/example.json --md out/report.md --html out/report.html
+
+# From fingerprints with a baseline
+neurolens compare --a fp/base.fp.json --b fp/latest.fp.json --markdown out/diff.md
+neurolens report --fingerprint fp/latest.fp.json --baseline fp/base.fp.json --html out/report.html
+```
+Insights evaluate the rule DSL in `neurolens/insights/rules.yaml`, rank findings by severity and impact, and emit Markdown/HTML summaries that highlight global issues, per-op bottlenecks, and divergences versus an optional baseline.
+
+### 5. Validate a profiling JSON manually
 ### 5. Validate a profiling JSON manually
 ### 4. Validate a profiling JSON manually
 ```
