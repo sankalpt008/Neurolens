@@ -1,0 +1,7 @@
+# Example storage configuration for NeuroLens run store
+root: ./runs_store
+auto_rebuild_index: false
+notes: |
+  Set ``root`` to the directory that should host the manifest, index, and partitioned
+  JSON artifacts. When ``auto_rebuild_index`` is true, tooling may rebuild the tabular
+  index from the manifest if it is missing.
