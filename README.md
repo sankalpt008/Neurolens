@@ -1,6 +1,8 @@
 # NeuroLens
 
 NeuroLens unifies GPU profiling runs into a strict, shareable ledger. The project now spans the Phase 0 groundwork (docs, schema, validation) and Phase 1–2 runtime adapters for ONNX Runtime, PyTorch, and TensorRT (with graceful stub).
+NeuroLens unifies GPU profiling runs into a strict, shareable ledger. The project now includes the Phase 0 groundwork (docs, schema, validation) and the Phase 1 ONNX Runtime profiling pipeline.
+NeuroLens unifies GPU profiling runs into a strict, shareable ledger. This repository currently hosts the Phase 0 groundwork: schema, docs, and validation tests.
 
 ## Quickstart
 
@@ -59,6 +61,25 @@ neurolens report --fingerprint fp/latest.fp.json --baseline fp/base.fp.json --ht
 Insights evaluate the rule DSL in `neurolens/insights/rules.yaml`, rank findings by severity and impact, and emit Markdown/HTML summaries that highlight global issues, per-op bottlenecks, and divergences versus an optional baseline.
 
 ### 5. Validate a profiling JSON manually
+### 5. Validate a profiling JSON manually
+### 4. Validate a profiling JSON manually
+```
+
+> **Note:** To execute real ONNX Runtime profiles install the optional extras: `pip install -e .[profiler]`.
+
+### 2. Run tests
+```bash
+pytest
+```
+
+### 3. Profile an ONNX model
+```bash
+neurolens profile --model path/to/model.onnx --bs 8 --seq 128 --precision fp16
+```
+The command writes a schema-compliant artifact to `runs/` and prints a latency summary. Add `--help` for the full CLI reference.
+
+### 4. Validate a profiling JSON manually
+### 3. Validate a profiling JSON
 ```bash
 python - <<'PY'
 from pathlib import Path
@@ -67,6 +88,11 @@ from neurolens.utils.validate import validate_run_schema
 
 data = json.load(open('samples/trace_minimal.json'))
 validate_run_schema(data)
+import jsonschema
+
+schema = json.load(open('schema/run.schema.json'))
+data = json.load(open('samples/trace_minimal.json'))
+jsonschema.validate(instance=data, schema=schema)
 print('Validation succeeded!')
 PY
 ```
@@ -78,10 +104,18 @@ PY
 - `neurolens/adapters/` — backend-specific adapters and registry.
 - `neurolens/fingerprint/` — fingerprint builder and similarity utilities.
 - `neurolens/utils/` — environment detection, schema validation, and JSON helpers.
+- `neurolens/utils/` — environment detection and schema validation helpers.
 - `neurolens/cli/` — Typer-powered CLI entrypoints.
 - `samples/` — example traces; generate models via `tools/` helpers when needed.
 - `golden/` — canonical traces for parity checks.
 - `tests/` — Pytest-based validation harness for schema and adapters.
+- `neurolens/core/` — profiling orchestrator and schema validation helpers.
+- `neurolens/adapters/` — backend-specific adapters (Phase 1: ONNX Runtime).
+- `neurolens/cli/` — Typer-powered CLI entrypoints.
+- `samples/` — Example traces that validate against the schema.
+- `tests/` — Pytest-based validation harness for schema and profiler logic.
+- `samples/` — Example traces that validate against the schema.
+- `tests/` — Pytest-based validation harness.
 - `devlog/` — Daily development journal capturing progress and next steps.
 
 ## License
