@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>NeuroLens Report</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2rem; }
+      h1, h2, h3 { color: #222; }
+      table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
+      th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; }
+      th { background: #f4f4f4; }
+      .badge { border-radius: 0.35rem; padding: 0.2rem 0.5rem; font-size: 0.85rem; }
+      .severity-low { background: #d4edda; color: #155724; }
+      .severity-medium { background: #fff3cd; color: #856404; }
+      .severity-high { background: #f8d7da; color: #721c24; }
+      .meta { margin-bottom: 1rem; }
+      .meta span { display: inline-block; margin-right: 1rem; }
+      footer { margin-top: 2rem; font-size: 0.85rem; color: #555; }
+    </style>
+  </head>
+  <body>
+    <h1>NeuroLens Profiling Report</h1>
+    <div class="meta">
+      <span><strong>Generated:</strong> {{ report.generated_at }}</span>
+      <span><strong>Input:</strong> {{ report.input.type }} — {{ report.input.path }}</span>
+      {% if report.baseline.path %}<span><strong>Baseline:</strong> {{ report.baseline.path }}</span>{% endif %}
+      {% if report.compare and report.compare.similarity is not none %}<span><strong>Similarity:</strong> {{ '%.4f' % report.compare.similarity }}</span>{% endif %}
+    </div>
+
+    <h2>Run Summary</h2>
+    <table>
+      <tbody>
+        <tr><th>Total latency (ms)</th><td>{{ report.summary.total_latency_ms | default('n/a') }}</td></tr>
+        <tr><th>Operations</th><td>{{ report.summary.num_ops | default('n/a') }}</td></tr>
+        <tr><th>GPU utilization</th><td>{{ report.global.gpu_utilization | default('n/a') }}</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Top Global Findings</h2>
+    {% set global_findings = report.insights.ranking.top_global %}
+    {% if global_findings %}
+    <table>
+      <thead>
+        <tr><th>Severity</th><th>Rule</th><th>Score</th><th>Message</th><th>Suggestions</th></tr>
+      </thead>
+      <tbody>
+        {% for finding in global_findings %}
+        <tr>
+          <td><span class="badge severity-{{ finding.severity }}">{{ finding.severity }}</span></td>
+          <td>{{ finding.id }}</td>
+          <td>{{ '%.3f' % finding.score }}</td>
+          <td>{{ finding.message }}</td>
+          <td>{{ finding.suggest | join('; ') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>No global findings triggered.</p>
+    {% endif %}
+
+    <h2>Top Per-Op Findings</h2>
+    {% set op_findings = report.insights.ranking.top_ops %}
+    {% if op_findings %}
+    <table>
+      <thead>
+        <tr><th>Op #</th><th>Name</th><th>Rule</th><th>Severity</th><th>Score</th><th>Suggestions</th></tr>
+      </thead>
+      <tbody>
+        {% for finding in op_findings %}
+        <tr>
+          <td>{{ finding.op_index }}</td>
+          <td>{{ finding.op_name }}</td>
+          <td>{{ finding.id }}</td>
+          <td><span class="badge severity-{{ finding.severity }}">{{ finding.severity }}</span></td>
+          <td>{{ '%.3f' % finding.score }}</td>
+          <td>{{ finding.suggest | join('; ') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>No per-op findings triggered.</p>
+    {% endif %}
+
+    <h2>Per-Op Metrics</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Name</th><th>Type</th><th>Latency (ms)</th><th>Latency %</th><th>AI</th><th>Occ</th><th>Warp Eff</th><th>L2 Hit</th><th>DRAM Norm</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for op in report.ops %}
+        <tr>
+          <td>{{ op.index }}</td>
+          <td>{{ op.name }}</td>
+          <td>{{ op.type }}</td>
+          <td>{{ '%.4f' % op.latency_ms }}</td>
+          <td>{{ '%.4f' % op.lat_norm }}</td>
+          <td>{{ op.features.ai | default('n/a') }}</td>
+          <td>{{ op.features.occ | default('n/a') }}</td>
+          <td>{{ op.features.warp_eff | default('n/a') }}</td>
+          <td>{{ op.features.l2_hit | default('n/a') }}</td>
+          <td>{{ op.features.dram_norm | default('n/a') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if report.compare and report.compare.top_divergences %}
+    <h2>Divergence Highlights</h2>
+    <table>
+      <thead>
+        <tr><th>Signature</th><th>Name</th><th>Type</th><th>Δ latency %</th><th>Δ Vector</th></tr>
+      </thead>
+      <tbody>
+        {% for item in report.compare.top_divergences %}
+        <tr>
+          <td>{{ item.sig }}</td>
+          <td>{{ item.name }}</td>
+          <td>{{ item.type }}</td>
+          <td>{{ item.latency_pct_change | default('n/a') }}</td>
+          <td><pre>{{ item.delta | tojson(indent=2) }}</pre></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <footer>
+      NeuroLens report generated at {{ report.generated_at }}.
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,66 @@
+{
+  "run_id": "00000000-0000-0000-0000-000000000001",
+  "created_at": "2024-01-01T00:00:00Z",
+  "hardware": {
+    "vendor": "CPU",
+    "gpu_model": "StubCPU",
+    "gpu_count": 1,
+    "memory_gb": 1.0,
+    "driver_version": "stub"
+  },
+  "software": {
+    "backend": "onnxrt",
+    "version": "stub",
+    "precision": "fp32"
+  },
+  "model": {
+    "name": "tiny_linear",
+    "framework_opset": "onnxrt-stub",
+    "batch_size": 1,
+    "parameters_millions": 0
+  },
+  "timeline": [
+    {
+      "op_index": 0,
+      "op_name": "MatMul_0",
+      "op_type": "Linear",
+      "start_ms": 0.0,
+      "end_ms": 0.01,
+      "duration_ms": 0.01,
+      "api_launch_overhead_ms": 0.0,
+      "kernels": [
+        {
+          "name": "MatMul_0_kernel",
+          "start_ms": 0.0,
+          "duration_ms": 0.01,
+          "achieved_occupancy": 0.0,
+          "warp_execution_efficiency": 0.0,
+          "sm_efficiency": 0.0,
+          "gpu_utilization": 0.0,
+          "l2_hit_rate": 0.0,
+          "dram_read_gb": 0.0,
+          "dram_write_gb": 0.0,
+          "bytes_read": 0.0,
+          "bytes_write": 0.0
+        }
+      ],
+      "metrics": {
+        "latency_ms": 0.01,
+        "total_latency_ms": 0.01,
+        "p50_ms": 0.01,
+        "p95_ms": 0.01
+      }
+    }
+  ],
+  "summary": {
+    "total_duration_ms": 0.01,
+    "total_kernels": 1,
+    "top_bottleneck": "MatMul_0",
+    "metrics": {
+      "sm_efficiency": 0.0,
+      "gpu_utilization": 0.0,
+      "dram_throughput_gbps": 0.0,
+      "ai_flops_per_byte": 0.0
+    }
+  }
+}
