@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.dist/
+.eggs/
+build/
+dist/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Environments
+.env
+.venv
+venv/
+ENV/
+
+# Editors
+.DS_Store
+.idea/
+.vscode/
+
+# Model artifacts
+*.onnx
+*.pt
+*.engine
+*.plan
+*.npz
+*.npy

@@ -1,0 +1,53 @@
+# NeuroLens Profiling Report
+
+- Generated at: {{ report.generated_at }}
+- Input: {{ report.input.type }} — `{{ report.input.path }}`
+{% if report.baseline.path %}- Baseline: `{{ report.baseline.path }}`{% endif %}
+{% if report.compare and report.compare.similarity is not none %}- Similarity vs baseline: {{ '%.4f' % report.compare.similarity }}{% endif %}
+
+## Run Summary
+
+- Total latency: {{ report.summary.total_latency_ms | default('n/a') }} ms
+- Operations: {{ report.summary.num_ops | default('n/a') }}
+- GPU utilization: {{ report.global.gpu_utilization | default('n/a') }}
+
+## Top Global Findings
+
+{% set global_findings = report.insights.ranking.top_global %}
+{% if global_findings %}
+| Severity | Rule | Score | Message |
+| --- | --- | --- | --- |
+{% for finding in global_findings %}| {{ finding.severity }} | {{ finding.id }} | {{ '%.3f' % finding.score }} | {{ finding.message }} |
+{% endfor %}
+{% else %}
+_No global findings triggered._
+{% endif %}
+
+## Top Per-Op Findings
+
+{% set op_findings = report.insights.ranking.top_ops %}
+{% if op_findings %}
+| Op Index | Name | Rule | Severity | Score | Suggestions |
+| --- | --- | --- | --- | --- | --- |
+{% for finding in op_findings %}| {{ finding.op_index }} | {{ finding.op_name }} | {{ finding.id }} | {{ finding.severity }} | {{ '%.3f' % finding.score }} | {{ finding.suggest | join('; ') }} |
+{% endfor %}
+{% else %}
+_No per-op findings triggered._
+{% endif %}
+
+## Per-Op Metrics
+
+| # | Name | Type | Latency (ms) | Lat % | AI | Occ | Warp Eff | L2 Hit | DRAM Norm |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+{% for op in report.ops %}| {{ op.index }} | {{ op.name }} | {{ op.type }} | {{ '%.4f' % op.latency_ms }} | {{ '%.4f' % op.lat_norm }} | {{ op.features.ai | default('n/a') }} | {{ op.features.occ | default('n/a') }} | {{ op.features.warp_eff | default('n/a') }} | {{ op.features.l2_hit | default('n/a') }} | {{ op.features.dram_norm | default('n/a') }} |
+{% endfor %}
+
+{% if report.compare and report.compare.top_divergences %}
+## Divergence Highlights
+
+| Signature | Name | Type | Δlatency% | Notable Deltas |
+| --- | --- | --- | --- | --- |
+{% for item in report.compare.top_divergences %}
+| {{ item.sig }} | {{ item.name }} | {{ item.type }} | {{ item.latency_pct_change | default('n/a') }} | {{ item.delta | tojson }} |
+{% endfor %}
+{% endif %}
