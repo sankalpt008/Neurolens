@@ -97,6 +97,17 @@ neurolens export --run runs/run123.json --fingerprint fp/run123.fp.json \
 ```
 The resulting `.bundle.zip` archive collects the run, fingerprint, reports, and a `manifest.json` with SHA-256 hashes for integrity checks.
 
+### 9. Run Store & Search
+```bash
+# Persist runs after profiling (write_run is called by higher-level flows)
+neurolens ls --backend onnxrt --model gpt2 --precision fp16 --day 2025-10-20
+neurolens ls --tag experiment=smoke --limit 10 --json
+```
+The storage layer writes runs into date/backend partitions with an append-only
+manifest. `neurolens ls` reads the Parquet (or JSONL) index and applies filters for
+fast lookups. See [`docs/storage_guide.md`](docs/storage_guide.md) for details.
+
+### 10. Validate a profiling JSON manually
 ### 9. Validate a profiling JSON manually
 ### 8. Validate a profiling JSON manually
 ### 7. Validate a profiling JSON manually
