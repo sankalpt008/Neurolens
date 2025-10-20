@@ -1,0 +1,10 @@
+backend: onnxrt
+model: ./tmp/add.onnx
+grid:
+  batch_size: [1, 2, 4]
+  seq_len: [64, 128]
+  precision: [fp32, fp16]
+repeats: 1
+tags:
+  experiment: "smoke"
+  note: "initial sweep"

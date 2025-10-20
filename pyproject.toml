@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neurolens"
+version = "0.0.0"
+description = "NeuroLens profiling normalization toolkit"
+authors = [{name = "NeuroLens Contributors"}]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "jsonschema>=4.19",
+    "typer>=0.9",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pydantic>=2.7",
+    "jsonschema>=4.19",
+]
+profiler = [
+    "onnxruntime>=1.16",
+    "numpy>=1.23",
+]
+viz = [
+    "streamlit>=1.32",
+]
+
+[project.scripts]
+neurolens = "neurolens.cli.main:run"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra"
+testpaths = ["tests"]
