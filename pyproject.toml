@@ -4,6 +4,30 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurolens"
+version = "0.1.0"
+description = "Unified GPU profiling normalization and insights toolkit"
+readme = "README.md"
+license = "Apache-2.0"
+authors = [{name = "NeuroLens Contributors"}]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+keywords = ["profiling", "gpu", "performance", "onnx", "pytorch"]
+dependencies = [
+    "typer>=0.9",
+    "jsonschema>=4.19",
+    "pydantic>=2.7",
+    "numpy>=1.24",
 version = "0.0.0"
 description = "NeuroLens profiling normalization toolkit"
 authors = [{name = "NeuroLens Contributors"}]
@@ -20,6 +44,13 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4",
+    "ruff>=0.4.2",
+    "pyarrow>=14.0",
+    "pandas>=2.1",
+]
+profiler = [
+    "onnxruntime>=1.16",
+    "torch>=2.1",
     "pydantic>=2.7",
     "jsonschema>=4.19",
 ]
@@ -32,6 +63,7 @@ viz = [
 ]
 
 [project.scripts]
+neurolens = "neurolens.cli.main:app"
 neurolens = "neurolens.cli.main:run"
 
 [project.scripts]
@@ -42,3 +74,17 @@ neurolens = "neurolens.cli.profile:run"
 minversion = "7.0"
 addopts = "-ra"
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["neurolens*"]
