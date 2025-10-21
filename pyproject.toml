@@ -31,8 +31,6 @@ viz = [
     "streamlit>=1.32",
 ]
 
-[project.scripts]
-neurolens = "neurolens.cli.main:run"
 
 [project.scripts]
 neurolens = "neurolens.cli.main:run"
