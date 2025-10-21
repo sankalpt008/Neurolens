@@ -92,6 +92,17 @@ app = typer.Typer(add_completion=False, help="Profile models with NeuroLens adap
 
 
 @app.command()
+import typer
+from pathlib import Path
+from typing import Optional
+
+from neurolens.adapters.onnxrt_adapter import OnnxRuntimeAdapter, OnnxRuntimeNotAvailable
+from neurolens.core.profiler import Profiler, SchemaValidationError
+
+app = typer.Typer(help="Neurolens: Profile ONNX models and export performance data.")
+
+
+@app.command()
 def profile(
     model: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True, help="Path to an ONNX model"),
     bs: Optional[int] = typer.Option(None, "--bs", "--batch-size", min=1, help="Override batch size for dynamic dims"),
@@ -104,6 +115,7 @@ def profile(
 
     adapter = OnnxRuntimeAdapter()
     profiler = Profiler(adapter)
+
     try:
         result = profiler.profile(model, batch_size=bs, sequence_length=seq, precision=precision)
     except OnnxRuntimeNotAvailable as exc:
@@ -114,15 +126,14 @@ def profile(
         typer.echo(exc.errors)
         raise typer.Exit(code=1) from exc
 
-    timeline = result.run_dict["timeline"]
-    summary = result.run_dict["summary"]
+    timeline = result.run_dict.get("timeline", [])
+    summary = result.run_dict.get("summary", {})
     total_ops = len(timeline)
     total_latency = summary.get("total_duration_ms", 0.0)
+
+    # Sort and format top-3 ops
     top_ops = sorted(timeline, key=lambda op: op.get("duration_ms", 0.0), reverse=True)[:3]
-    top_ops_str = ", ".join(
-        f"{entry['op_name']} ({entry['duration_ms']:.3f} ms)" for entry in top_ops
-    ) or "n/a"
-    )
+    top_ops_str = ", ".join(f"{entry['op_name']} ({entry['duration_ms']:.3f} ms)" for entry in top_ops) or "n/a"
 
     typer.secho(
         f"Ran {total_ops} ops, total {total_latency:.3f} ms, top-3: {top_ops_str}",
@@ -133,7 +144,6 @@ def profile(
 
 def run() -> None:
     """Entrypoint for ``python -m neurolens.cli.profile`` usage."""
-
     app()
 
 
