@@ -85,12 +85,6 @@ class OnnxRuntimeAdapter:
             "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "hardware": get_hardware_info(),
             "software": get_software_info("onnxrt", precision),
-        timeline = self._build_timeline(events)
-        summary = self._build_summary(timeline)
-
-        run_payload = {
-            "hardware": self._hardware_info(),
-            "software": self._software_info(precision),
             "model": self._model_info(session, model_path, batch_size),
             "timeline": timeline,
             "summary": summary,
