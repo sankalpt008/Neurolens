@@ -4,39 +4,49 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "neurolens"
-version = "0.0.0"
-description = "NeuroLens profiling normalization toolkit"
-authors = [{name = "NeuroLens Contributors"}]
-license = {text = "Apache-2.0"}
+version = "0.1.0"
+description = "Unified GPU profiling normalization and insights toolkit"
 readme = "README.md"
+license = "Apache-2.0"
+authors = [{name = "NeuroLens Contributors"}]
 requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+keywords = ["profiling", "gpu", "performance", "onnx", "pytorch"]
 dependencies = [
-    "jsonschema>=4.19",
     "typer>=0.9",
-    "jinja2>=3.1",
-    "pyyaml>=6.0",
+    "jsonschema>=4.19",
+    "pydantic>=2.7",
+    "numpy>=1.24"
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4",
-    "pydantic>=2.7",
-    "jsonschema>=4.19",
+    "ruff>=0.4.2",
+    "pyarrow>=14.0",
+    "pandas>=2.1",
 ]
 profiler = [
     "onnxruntime>=1.16",
+    "torch>=2.1",
+    "pydantic>=2.7",
+    "jsonschema>=4.19",
     "numpy>=1.23",
 ]
 viz = [
     "streamlit>=1.32",
 ]
 
-
 [project.scripts]
-neurolens = "neurolens.cli.main:run"
-
-
-[tool.pytest.ini_options]
-minversion = "7.0"
-addopts = "-ra"
-testpaths = ["tests"]
+neurolens = "neurolens.cli.main:app"
