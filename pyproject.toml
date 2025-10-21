@@ -49,7 +49,9 @@ viz = [
 ]
 
 [project.scripts]
-neurolens = "neurolens.cli.main:run"
+neurolens = "neurolens.cli.__main__:main"
+compare = "neurolens.cli.compare:main"
+summarize = "neurolens.cli.summarize:main"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
