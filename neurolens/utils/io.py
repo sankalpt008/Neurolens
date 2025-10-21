@@ -26,12 +26,9 @@ def read_json(path: str | Path) -> Dict[str, Any]:
     file_path = Path(path)
     try:
         content = file_path.read_text(encoding="utf-8")
-    except FileNotFoundError:  # pragma: no cover - upstream handling
-        raise
-    except OSError as exc:  # pragma: no cover - I/O edge cases
     except FileNotFoundError as exc:  # pragma: no cover - handled by caller in tests/cli
-        raise
-    except OSError as exc:
+        raise FileNotFoundError(f"File not found: {file_path}") from exc
+    except OSError as exc:  # pragma: no cover - I/O edge cases
         raise RuntimeError(f"Failed to read JSON file '{file_path}': {exc}") from exc
 
     try:
