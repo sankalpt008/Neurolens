@@ -1,8 +1,10 @@
+
 """ONNX Runtime adapter producing NeuroLens timeline artifacts."""
 from __future__ import annotations
 
 import json
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -10,24 +12,12 @@ from typing import Any, Callable, Dict, List, Optional
 from neurolens.adapters.base import register
 from neurolens.utils import get_hardware_info, get_software_info
 
-import os
-import platform
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
-
 ProfileEvents = List[Dict[str, Any]]
 
 
 class OnnxRuntimeNotAvailable(RuntimeError):
     """Raised when ``onnxruntime`` is required but not installed."""
 
-
-@register
-class OnnxRuntimeAdapter:
-    """Adapter that normalises ONNX Runtime profiling traces."""
-
-    name = "onnxrt"
 
 @dataclass
 class _ModelMetadata:
@@ -37,8 +27,11 @@ class _ModelMetadata:
     producer_name: str = ""
 
 
+@register
 class OnnxRuntimeAdapter:
     """Adapter that normalises ONNX Runtime profiling traces."""
+
+    name = "onnxrt"
 
     def __init__(
         self,
@@ -54,6 +47,10 @@ class OnnxRuntimeAdapter:
     # Public API
     # ------------------------------------------------------------------
     def run(self, model_spec: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Execute a profiling run for the model specified by model_spec and config.
+        Returns a run payload (timeline + metadata).
+        """
         model_path = Path(model_spec.get("path") or model_spec.get("model"))
         if not model_path.exists():
             raise FileNotFoundError(f"ONNX model not found: {model_path}")
@@ -62,7 +59,9 @@ class OnnxRuntimeAdapter:
         sequence_length = config.get("sequence_length")
         precision = config.get("precision", "fp32")
 
-        session = self._session_factory(model_path)
+        # delegate to profile_model which handles end-to-end profiling and payload assembly
+        return self.profile_model(model_path, batch_size=batch_size, sequence_length=sequence_length, precision=precision)
+
     def profile_model(
         self,
         model_path: Path,
@@ -73,6 +72,7 @@ class OnnxRuntimeAdapter:
     ) -> Dict[str, Any]:
         session = self._session_factory(Path(model_path))
         feeds = self._prepare_inputs(session, batch_size=batch_size, sequence_length=sequence_length)
+        # run the session to generate profile
         session.run(None, feeds)
         profile_path = Path(session.end_profiling())
         events = self._profile_loader(profile_path)
@@ -104,6 +104,7 @@ class OnnxRuntimeAdapter:
 
         sess_options = ort.SessionOptions()
         sess_options.enable_profiling = True
+        # Creating an InferenceSession with profiling enabled
         return ort.InferenceSession(str(model_path), sess_options=sess_options)
 
     def _prepare_inputs(
@@ -132,6 +133,9 @@ class OnnxRuntimeAdapter:
                 self._resolve_dim(dim, batch_size=batch_size, sequence_length=sequence_length)
                 for dim in raw_shape
             ]
+            # numpy expects ints in the shape; ensure at least [1] if empty
+            if not shape:
+                shape = [batch_size or 1]
             feeds[name] = np.random.rand(*shape).astype(dtype)
         return feeds
 
@@ -175,70 +179,19 @@ class OnnxRuntimeAdapter:
         with profile_path.open("r", encoding="utf-8") as fh:
             payload = json.load(fh)
         if isinstance(payload, dict):
-            return payload.get("traceEvents", [])
+            return payload.get("traceEvents", []) or payload.get("events", []) or []
         return payload
 
     # ------------------------------------------------------------------
     # Metadata helpers
     # ------------------------------------------------------------------
     def _model_info(self, session: Any, model_path: Path, batch_size: Optional[int]) -> Dict[str, Any]:
-        name = model_path.stem
-        opset = self._infer_opset(model_path)
-        try:
-            metadata = session.get_modelmeta()
-            graph_name = getattr(metadata, "graph_name", None)
-            if graph_name:
-                name = graph_name
-        except Exception:
-            pass
-        return {
-            "name": name,
-            "framework_opset": opset,
-            "batch_size": int(batch_size or 1),
-            "parameters_millions": 0,
-        }
-
-    def _hardware_info(self) -> Dict[str, Any]:
-        vendor = "CPU"
-        gpu_model = platform.processor() or platform.machine() or "GenericCPU"
-        driver_version = platform.release()
-        memory_gb = self._detect_memory_gb()
-        return {
-            "vendor": vendor,
-            "gpu_model": gpu_model,
-            "gpu_count": 1,
-            "memory_gb": memory_gb,
-            "driver_version": driver_version,
-        }
-
-    def _detect_memory_gb(self) -> float:
-        try:
-            pages = os.sysconf("SC_PHYS_PAGES")
-            page_size = os.sysconf("SC_PAGE_SIZE")
-            memory = pages * page_size
-            return round(memory / (1024 ** 3), 2)
-        except (ValueError, OSError, AttributeError):
-            return 1.0
-
-    def _software_info(self, precision: str) -> Dict[str, Any]:
-        try:
-            import onnxruntime as ort
-            version = ort.__version__
-        except ImportError:
-            version = "unknown"
-        return {
-            "backend": "onnxrt",
-            "version": version,
-            "precision": precision,
-        }
-
-    def _model_info(self, session: Any, model_path: Path, batch_size: Optional[int]) -> Dict[str, Any]:
         meta = self._extract_model_meta(session)
         opset = self._infer_opset(model_path)
         return {
             "name": meta.graph_name or model_path.stem,
             "framework_opset": opset,
-            "batch_size": batch_size or 1,
+            "batch_size": int(batch_size or 1),
             "parameters_millions": 0,
         }
 
@@ -260,7 +213,10 @@ class OnnxRuntimeAdapter:
 
             model = onnx.load(str(model_path))
             if model.opset_import:
-                return f"onnx-opset{model.opset_import[0].version}"
+                # opset_import is a list; return the first entry's version if available
+                version = getattr(model.opset_import[0], "version", None)
+                if version is not None:
+                    return f"onnx-opset{version}"
         except Exception:
             pass
         return "onnx-opset-unknown"
@@ -269,6 +225,7 @@ class OnnxRuntimeAdapter:
     # Timeline + summary
     # ------------------------------------------------------------------
     def _build_timeline(self, events: ProfileEvents) -> List[Dict[str, Any]]:
+        # Filter for node events which ONNX Runtime typically tags with category "Node"
         node_events = [event for event in events if event.get("cat") == "Node"]
         node_events.sort(key=lambda evt: evt.get("ts", 0))
         if not node_events:
@@ -277,22 +234,20 @@ class OnnxRuntimeAdapter:
         origin = node_events[0].get("ts", 0)
         timeline: List[Dict[str, Any]] = []
         for index, event in enumerate(node_events):
-            args = event.get("args", {})
+            args = event.get("args", {}) or {}
             name = args.get("op_name") or event.get("name") or f"node_{index}"
-            op_type = args.get("op_type") or args.get("op", "Unknown")
-            start_us = event.get("ts", 0) - origin
-            dur_us = event.get("dur", 0)
-            duration_ms = max(dur_us / 1000.0, 0.000_001)
-            start_ms = max(start_us / 1000.0, 0.0)
-            start_ms = max(start_us / 1000.0, 0.0)
+            op_type = args.get("op_type") or args.get("op") or "Unknown"
+            start_us = max(event.get("ts", 0) - origin, 0)
+            dur_us = max(event.get("dur", 0), 0)
+            start_ms = start_us / 1000.0
             duration_ms = max(dur_us / 1000.0, 0.0)
             end_ms = start_ms + duration_ms
 
             kernel_entry = {
                 "name": f"{name}_kernel",
                 "start_ms": start_ms,
-                "duration_ms": duration_ms,
                 "duration_ms": max(duration_ms, 0.001),
+                # keep placeholder metrics; more detailed GPU metrics are not available from ONNX Runtime JSON
                 "achieved_occupancy": 0.0,
                 "warp_execution_efficiency": 0.0,
                 "sm_efficiency": 0.0,
@@ -309,8 +264,6 @@ class OnnxRuntimeAdapter:
                 "total_latency_ms": duration_ms,
                 "p50_ms": duration_ms,
                 "p95_ms": duration_ms,
-                "p50_ms": duration_ms if duration_ms > 0 else 0.0,
-                "p95_ms": duration_ms if duration_ms > 0 else 0.0,
             }
 
             timeline.append(
@@ -320,7 +273,6 @@ class OnnxRuntimeAdapter:
                     "op_type": op_type,
                     "start_ms": start_ms,
                     "end_ms": end_ms,
-                    "duration_ms": duration_ms,
                     "duration_ms": max(duration_ms, 0.001),
                     "api_launch_overhead_ms": 0.0,
                     "kernels": [kernel_entry],
@@ -330,20 +282,20 @@ class OnnxRuntimeAdapter:
         return timeline
 
     def _build_summary(self, timeline: List[Dict[str, Any]]) -> Dict[str, Any]:
-        total_latency = sum(entry["duration_ms"] for entry in timeline)
-        top_entry = max(timeline, key=lambda entry: entry.get("duration_ms", 0.0))
-        total_kernels = sum(len(entry.get("kernels", [])) for entry in timeline)
-        return {
-            "total_duration_ms": total_latency,
-            "total_kernels": total_kernels or 1,
-            "top_bottleneck": top_entry["op_name"],
-        total_duration = max((entry["end_ms"] for entry in timeline), default=0.0)
+        if not timeline:
+            return {
+                "total_duration_ms": 0.0,
+                "total_kernels": 0,
+                "top_bottleneck": "",
+                "metrics": {},
+            }
+        total_duration = max((entry.get("end_ms", 0.0) for entry in timeline), default=0.0)
         total_kernels = sum(len(entry.get("kernels", [])) for entry in timeline)
         bottleneck_entry = max(timeline, key=lambda entry: entry.get("duration_ms", 0.0))
         return {
             "total_duration_ms": total_duration,
             "total_kernels": total_kernels,
-            "top_bottleneck": bottleneck_entry["op_name"],
+            "top_bottleneck": bottleneck_entry.get("op_name", ""),
             "metrics": {
                 "sm_efficiency": 0.0,
                 "gpu_utilization": 0.0,
