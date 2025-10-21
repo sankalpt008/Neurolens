@@ -27,7 +27,7 @@ dependencies = [
     "typer>=0.9",
     "jsonschema>=4.19",
     "pydantic>=2.7",
-    "numpy>=1.24"
+    "numpy>=1.24",
 ]
 
 [project.optional-dependencies]
@@ -49,4 +49,23 @@ viz = [
 ]
 
 [project.scripts]
-neurolens = "neurolens.cli.main:app"
+neurolens = "neurolens.cli.main:run"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F"]
+ignore = ["E501"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["neurolens*"]
