@@ -107,13 +107,6 @@ The storage layer writes runs into date/backend partitions with an append-only
 manifest. `neurolens ls` reads the Parquet (or JSONL) index and applies filters for
 fast lookups. See [`docs/storage_guide.md`](docs/storage_guide.md) for details.
 
-### 10. Validate a profiling JSON manually
-### 9. Validate a profiling JSON manually
-### 8. Validate a profiling JSON manually
-### 7. Validate a profiling JSON manually
-### 5. Validate a profiling JSON manually
-### 5. Validate a profiling JSON manually
-### 4. Validate a profiling JSON manually
 ```
 
 > **Note:** To execute real ONNX Runtime profiles install the optional extras: `pip install -e .[profiler]`.
@@ -130,7 +123,6 @@ neurolens profile --model path/to/model.onnx --bs 8 --seq 128 --precision fp16
 The command writes a schema-compliant artifact to `runs/` and prints a latency summary. Add `--help` for the full CLI reference.
 
 ### 4. Validate a profiling JSON manually
-### 3. Validate a profiling JSON
 ```bash
 python - <<'PY'
 from pathlib import Path
